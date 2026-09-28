@@ -1,31 +1,31 @@
+import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Float } from '@react-three/drei';
+import { ScrollControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { TestCube } from './TestCube';
+import { Street } from './Street';
+import { Rain } from './Rain';
+import { CameraRig } from './CameraRig';
+import { CanvasLoader } from '../ui/Loader';
 
 export function Scene() {
   return (
-    <Canvas camera={{ position: [0, 0, 5], fov: 60 }}>
-      <color attach="background" args={['#050508']} />
+    <Canvas camera={{ position: [0, 4, 6], fov: 60 }} style={{ width: '100%', height: '100%' }}>
+      <color attach="background" args={['#010204']} />
+      <fog attach="fog" args={['#010204', 10, 80]} />
 
-      <ambientLight intensity={0.8} />
-      <pointLight position={[2, 2, 2]} intensity={18} color="#00f0ff" />
-      <pointLight position={[-2, -1, 2]} intensity={10} color="#6dffb8" />
+      <ambientLight intensity={0.25} color="#1a2a48" />
+      <directionalLight position={[14, 28, 10]} intensity={1.2} color="#b7c9e6" />
 
-      <Float speed={1.6} rotationIntensity={0.8} floatIntensity={1.3}>
-        <TestCube />
-      </Float>
-
-      <OrbitControls
-        enableDamping
-        dampingFactor={0.08}
-        minDistance={3}
-        maxDistance={8}
-        enablePan={false}
-      />
+      <ScrollControls pages={5} damping={0.2}>
+        <Suspense fallback={<CanvasLoader />}>
+          <Street />
+        </Suspense>
+        <Rain />
+        <CameraRig />
+      </ScrollControls>
 
       <EffectComposer>
-        <Bloom luminanceThreshold={0.2} mipmapBlur intensity={1.5} />
+        <Bloom luminanceThreshold={1} mipmapBlur intensity={2.0} />
       </EffectComposer>
     </Canvas>
   );
