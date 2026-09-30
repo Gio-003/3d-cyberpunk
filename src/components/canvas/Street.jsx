@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react';
-import { useGLTF, useTexture } from '@react-three/drei';
+import { Suspense, useEffect, useMemo } from 'react';
+import { Text, useGLTF, useScroll, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
 const STREET_MODEL = '/models/cyber_street.glb';
+const MOTOR_MODEL = '/models/motor.glb';
 // One image per panel, in Billboard_* name order. Add a file here to give
 // the next panel its own texture.
 const BILLBOARD_TEXTURES = [
@@ -32,6 +33,33 @@ function makeWetMaterial(color) {
   });
 }
 
+const BUILDING_COLORS = [
+  '#505b70', // cold slate
+  '#455e62', // muted teal
+  '#63505f', // dusty magenta
+  '#5c604d', // industrial olive
+  '#4e4965', // violet concrete
+  '#53616b', // blue steel
+];
+
+function buildingColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  return BUILDING_COLORS[hash % BUILDING_COLORS.length];
+}
+
+function isExitSign(object) {
+  let node = object;
+  while (node) {
+    const name = node.name || '';
+    if (name === 'Interactive_Exit_Sign' || name.includes('SignBoard_EXIT')) return true;
+    node = node.parent;
+  }
+  return false;
+}
+
 function makeBillboardMaterial(source, mesh) {
   const texture = source.clone();
   // glTF UVs have V pointing down; textures loaded outside GLTFLoader must match.
@@ -55,9 +83,36 @@ function makeBillboardMaterial(source, mesh) {
   return new THREE.MeshBasicMaterial({ map: texture, toneMapped: false });
 }
 
+function Motorcycle() {
+  const { scene } = useGLTF(MOTOR_MODEL);
+  const motor = useMemo(() => scene.clone(), [scene]);
+  // Parked on the left sidewalk, parallel to the first building.
+  // The model faces +X; a quarter turn points it down the alley.
+  return (
+    <primitive
+      object={motor}
+      position={[-4.95, 0.18, -6]}
+      rotation={[0, Math.PI / 2, 0]}
+      scale={3}
+    />
+  );
+}
+
 export function Street() {
   const { scene } = useGLTF(STREET_MODEL);
   const billboardTextures = useTexture(BILLBOARD_TEXTURES);
+  const scroll = useScroll();
+
+  const scrollToStart = () => {
+    // CameraRig eases toward scroll offset 0, so the view glides back to the entrance.
+    scroll.el.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const returnToStart = (event) => {
+    if (!isExitSign(event.object)) return;
+    event.stopPropagation();
+    scrollToStart();
+  };
   const street = useMemo(() => scene.clone(), [scene]);
 
   useEffect(() => {
@@ -100,7 +155,7 @@ export function Street() {
       } else if (name === 'Street_Road') {
         material = makeWetMaterial('#12141a');
       } else if (name.startsWith('Building')) {
-        material = makeWetMaterial('#5c6679');
+        material = makeWetMaterial(buildingColor(name));
       }
 
       if (!material) return;
@@ -116,8 +171,50 @@ export function Street() {
     };
   }, [street, billboardTextures]);
 
-  return <primitive object={street} />;
+  return (
+    <>
+      <primitive
+        object={street}
+        onClick={returnToStart}
+        onPointerOver={(event) => {
+          if (!isExitSign(event.object)) return;
+          event.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={(event) => {
+          if (!isExitSign(event.object)) return;
+          document.body.style.cursor = 'auto';
+        }}
+      />
+      <Motorcycle />
+      {/* Text fetches its font at runtime; its own boundary keeps the street visible meanwhile. */}
+      <Suspense fallback={null}>
+        <Text
+          position={[0, 4.15, -73.3]}
+          fontSize={0.5}
+          letterSpacing={0.12}
+          anchorX="center"
+          anchorY="middle"
+          onClick={(event) => {
+            event.stopPropagation();
+            scrollToStart();
+          }}
+          onPointerOver={(event) => {
+            event.stopPropagation();
+            document.body.style.cursor = 'pointer';
+          }}
+          onPointerOut={() => {
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          CLICK TO GO BACK
+          <meshBasicMaterial color={[2.4, 1.2, 1.8]} toneMapped={false} />
+        </Text>
+      </Suspense>
+    </>
+  );
 }
 
 useGLTF.preload(STREET_MODEL);
+useGLTF.preload(MOTOR_MODEL);
 useTexture.preload(BILLBOARD_TEXTURES);

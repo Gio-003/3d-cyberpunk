@@ -72,7 +72,7 @@ export function Rain() {
   });
 
   return (
-    <lineSegments ref={lines} frustumCulled={false}>
+    <lineSegments ref={lines} frustumCulled={false} raycast={() => null}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>

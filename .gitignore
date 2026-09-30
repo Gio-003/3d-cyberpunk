@@ -16,6 +16,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Python / Blender script caches
+__pycache__/
+*.py[cod]
+
 # OS files
 .DS_Store
 Thumbs.db
