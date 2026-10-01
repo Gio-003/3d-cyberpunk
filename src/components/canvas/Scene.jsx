@@ -6,6 +6,7 @@ import { Street } from './Street';
 import { Rain } from './Rain';
 import { CameraRig } from './CameraRig';
 import { CanvasLoader } from '../ui/Loader';
+import { HologramSystem } from '../holograms/HologramSystem';
 
 export function Scene() {
   return (
@@ -17,11 +18,13 @@ export function Scene() {
       <directionalLight position={[14, 28, 10]} intensity={1.2} color="#b7c9e6" />
 
       <ScrollControls pages={5} damping={0.2}>
-        <Suspense fallback={<CanvasLoader />}>
-          <Street />
-        </Suspense>
-        <Rain />
-        <CameraRig />
+        <HologramSystem>
+          <Suspense fallback={<CanvasLoader />}>
+            <Street />
+          </Suspense>
+          <Rain />
+          <CameraRig />
+        </HologramSystem>
       </ScrollControls>
 
       <EffectComposer>

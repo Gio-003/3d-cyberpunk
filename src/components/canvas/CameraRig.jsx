@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber';
-import { useScroll } from '@react-three/drei';
 import * as THREE from 'three';
+import { useJourneyProgress } from '../holograms/HologramSystem';
 
 // The glTF street runs toward -Z. Y is eye height, not the length of the alley.
 const EYE_HEIGHT = 4;
@@ -9,10 +9,10 @@ const END_Z = -62;
 const LOOK_AHEAD = 10;
 
 export function CameraRig() {
-  const scroll = useScroll();
+  const { progress } = useJourneyProgress();
 
   useFrame((state, delta) => {
-    const targetZ = THREE.MathUtils.lerp(START_Z, END_Z, scroll.offset);
+    const targetZ = THREE.MathUtils.lerp(START_Z, END_Z, progress.current);
 
     state.camera.position.x = 0;
     state.camera.position.y = EYE_HEIGHT;
